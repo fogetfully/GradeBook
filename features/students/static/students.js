@@ -1,13 +1,15 @@
 import {requestJSON} from "/static/js/api.js";
-import {cell, message, busy, actions, emptyRow} from "/static/js/ui.js";
+import {cell, message, busy, actions, emptyRow, fillGroups} from "/static/js/ui.js";
 const API = "/api/students";
+const GROUPS_API = "/api/groups";
 const body = document.querySelector("#table-body");
 const editor = document.querySelector("#editor");
 const form = document.querySelector("#edit-form");
 const idInput = document.querySelector("#record-id");
 const nameInput = document.querySelector("#record-name");
+const groupSelect = document.querySelector("#record-group");
 const confirmation = document.querySelector("#confirmation");
-let items = [], pendingId = null, loaded = false;
+let items = [], groups = [], pendingId = null, loaded = false;
 nameInput.maxLength = 50;
 
 /** Отправляет добавление или переименование записи. */
@@ -21,6 +23,7 @@ async function deleteRecord(recordId) {
   return requestJSON(API + "/" + recordId, "DELETE");
 }
 
+
 /** Строит таблицу по массиву из API. */
 function render() {
   body.replaceChildren();
@@ -28,16 +31,9 @@ function render() {
   for (const item of items) {
     const row = document.createElement("tr"); row.append(cell(item.name));
     row.append(cell(item.group_name, "group"));
-    const td = document.createElement("td"); td.append(actions(item.id)); 
-
+    const td = document.createElement("td"); 
     const box = document.createElement("div"); box.className = "row-actions";
-    const button = document.createElement("button"); button.type = "button";
-    button.className = "row-actions"; button.dataset.action = "transfer"; button.dataset.id = String(item.id);
-    button.textContent = "Перевести";
-    // button.textContent = action === "transfer" ? "Перевести" : "Удалить";
-    box.append(button);
-
-    td.append(box);
+    td.append(box); td.append(actions(item.id)); 
     row.append(td); body.append(row);
   }
 }
@@ -45,7 +41,9 @@ function render() {
 /** Обновляет данные, сохраняя старую таблицу при неудачном запросе. */
 async function load(successText = "") {
   busy(true); message("Загрузка...");
-  try { items = (await requestJSON(API)).items; loaded = true; render(); message(successText); }
+  try { items = (await requestJSON(API)).items; loaded = true; render(); message(successText); 
+    groups = (await requestJSON(GROUPS_API)).items;
+    fillGroups(groupSelect, groups);}
   catch (error) {
     message((successText ? successText + " Обновление списка не удалось. " : "") + error.message, true);
     if (!loaded) emptyRow(body, 3, "Данные не загружены");
@@ -55,6 +53,7 @@ async function load(successText = "") {
 /** Открывает одну форму для создания и изменения. */
 function openEditor(item = null) {
   form.reset(); idInput.value = item ? String(item.id) : ""; nameInput.value = item ? item.name : "";
+  groupSelect.value = item ? String(item.group_id) : "";
   document.querySelector("#editor-title").textContent = item ? "Изменение записи" : "Добавление записи";
   editor.hidden = false; confirmation.hidden = true; message(); nameInput.focus();
 }
@@ -64,6 +63,7 @@ document.querySelector("#cancel-edit").addEventListener("click", function() { ed
 form.addEventListener("submit", async function(event) {
   event.preventDefault(); const name = nameInput.value.trim();
   if (!name) { message("Введите название.", true); nameInput.focus(); return; }
+  if (!groupSelect.value) { message("Выберите руппу.", true); groupSelect.focus(); return; }
   busy(true);
   try {
     await saveRecord(idInput.value ? Number(idInput.value) : null, {name: name});

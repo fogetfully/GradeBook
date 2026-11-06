@@ -11,7 +11,7 @@ def list_students(con):
     """
     cursor = con.execute(
         '''
-        SELECT s.id, s.name, g.name AS group_name FROM students AS s LEFT JOIN groups AS g ON s.group_id = g.id GROUP BY s.id, s.name ORDER BY s.name, s.id
+        SELECT s.id, s.name, s.group_id, g.name AS group_name FROM students AS s LEFT JOIN groups AS g ON s.group_id = g.id GROUP BY s.id, s.name ORDER BY s.name, s.id
         ''',
         (),
     )

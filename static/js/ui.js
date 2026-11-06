@@ -27,7 +27,6 @@ export function actions(id) {
     const button = document.createElement("button"); button.type = "button";
     button.dataset.action = action; button.dataset.id = String(id);
     button.textContent = action === "edit" ? "Изменить" : "Удалить";
-    // button.textContent = action === "transfer" ? "Перевести" : "Удалить";
     if (action === "delete") button.className = "button-danger";
     box.append(button);
   }
